@@ -1,0 +1,6 @@
+{
+	"label":	"CRTPlayer",
+	"icon":	"CRTicon.png",
+	"launch":	"launch.sh",
+	"description":	"CRTPlayer"
+}
