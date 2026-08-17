@@ -1,0 +1,147 @@
+# CRTPlayer 2.0 for Miyoo Mini Plus (OnionOS)
+
+A drop-in companion app for the OnionOS FFplay video player that turns your
+video playback into a real CRT experience — scanlines, glow, grain, a
+choice of physical TV bezels, and a live in-app filter menu — all
+switchable on the fly with a button press, no need to leave the app or
+touch a script.
+
+## What's new in 2.0
+
+* **Live filter toggle** — turn the whole CRT effect on/off instantly
+while a video is playing
+* **Three tuned presets**, each with its own on-screen label:
+
+  * **Warm Glow** — clean scanlines, punchy color, soft highlight lift
+  * **Classic CRT** — the reference "textbook" CRT look
+  * **VHS Tape** — heavier grain and scanlines, warm tint, worn-tape mood
+* **A custom filter menu** — pause, pick exactly which effects you want
+(scanlines, saturation, vignette, glow, grain, tint) in any
+combination, and resume with your own custom look
+* **Five bezel options** — four physical/illustrated TV frames, cyclable
+live, plus a "no bezel" full-screen mode
+* All of the above work together — pick any preset or custom combo with
+any bezel, at any time, without restarting the app
+
+## What it does
+
+* Scanlines (tuned to avoid color fringing on chroma-subsampled video)
+* Color/saturation boost
+* Vignette (darkened corners)
+* Film grain
+* Warm color tint
+* Highlight glow
+* Real TV bezel frames around your video, cycled live
+* A pause menu for fully custom filter combinations
+
+All done via ffplay's built-in `-vf` filtergraph and a background
+button-listener script — no source modification, no recompiling.
+
+## Requirements
+
+* Miyoo Mini Plus running OnionOS
+* The standard **FFplay / Video Player** app already installed (this mod
+uses the same shared system ffplay binary — it does not bundle its own)
+* Credit to [Steward-fu](https://steward-fu.github.io/website/handheld/miyoo-mini/parasyte_build_ffplay.htm)
+and [bobotrax](https://github.com/bobotrax/ffplay_Miyoo) for the
+original FFplay port this builds on
+
+## Installation
+
+1. Download this zip and extract its contents into a new folder named
+`CRTPlayer`.
+2. Copy that `CRTPlayer` folder into `/App/` at the root of your SD card,
+so you end up with `/App/CRTPlayer/` containing `launch.sh`,
+`config.json`, `icon.png`, and all the bezel/label PNGs directly (not
+nested another level deep).
+3. Restart the device.
+4. You should see a new **CRTPlayer** icon in your Apps menu, alongside
+the regular Video Player.
+5. Videos are read from the same `Media/Videos` folder as the normal
+player — no need to duplicate your files.
+
+## Controls
+
+|Button|Action|
+|-|-|
+|**L**|Turn the CRT filter fully on/off|
+|**R**|Cycle presets: Warm Glow → Classic CRT → VHS Tape|
+|**R2**|Cycle bezels: Bezel 1 → 2 → 3 → 4 → No Bezel|
+|**L2**|Open/close the custom filter menu|
+|**Up / Down** (in menu)|Move the cursor between filters|
+|**R** (in menu)|Toggle the highlighted filter on/off|
+
+Closing the custom menu switches you to a **Custom** look built from
+whichever filters you checked — it works alongside the three presets and
+any bezel, and stays selected until you pick a preset with R or open the
+menu again.
+
+## Known limitations
+
+* Position tracking on toggle is approximate (based on elapsed time, not
+ffplay's true internal position) — switching modes right after a manual
+seek may land you a little off from where you actually were. Normal
+playback and toggling is accurate to within a second or so.
+* The custom menu pauses the video while open; there's a brief
+(roughly 1 second or less) interruption each time you toggle a filter,
+switch presets, or switch bezels, since each change restarts playback
+under the hood.
+* This is a stripped ffplay build — several common ffmpeg filters aren't
+available (`eq`, `rgbashift`, `tmix`, `drawtext` all fail to launch).
+Everything in this release only uses filters confirmed working on this
+exact build.
+
+## The filter chain (for tinkerers)
+
+Base preset filters (before bezel compositing):
+
+```sh
+# Warm Glow
+hflip,vflip,drawgrid=w=iw:h=4:t=1:c=black@0.2,hue=s=1.4,vignette,lutyuv=y='val\*1.1+8',noise=alls=7:allf=t
+
+# Classic CRT
+hflip,vflip,drawgrid=w=iw:h=3:t=1:c=black@0.2,hue=s=1.3,vignette,noise=alls=8:allf=t,colorbalance=rs=0.05:gs=0.04:bs=-0.05
+
+# VHS Tape
+hflip,vflip,drawgrid=w=iw:h=3:t=1:c=black@0.45,hue=s=1.05,vignette,noise=alls=15:allf=t,colorbalance=rs=0.15:gs=0.05:bs=-0.15,lutyuv=y='val\*1.1+8'
+```
+
+Custom menu filters map to these individual segments — mix and match any
+combination:
+
+|Filter|Segment|
+|-|-|
+|Scanlines|`drawgrid=w=iw:h=4:t=1:c=black@0.2`|
+|Saturation|`hue=s=1.4`|
+|Vignette|`vignette`|
+|Glow|`lutyuv=y='val\*1.1+8'`|
+|Grain|`noise=alls=7:allf=t`|
+|Tint|`colorbalance=rs=0.05:gs=0.04:bs=-0.05`|
+
+Bezels composite in via `movie=`+`overlay`, each with its own measured
+scale/position since every bezel photo/illustration has a differently
+sized screen cutout — see `launch.sh` for the exact values per bezel.
+
+## Credits
+
+Built and tuned by Jack\_Appleseed. Built on the OnionOS FFplay
+port originally by Steward-fu, packaged for OnionOS by bobotrax and the
+OnionUI team.
+
+## Support
+
+I love digging into old hardware and finding ways to make it do things
+it was never designed for — there's something genuinely satisfying about
+poking through a stripped-down embedded system, hitting dead ends, and
+eventually getting a device to do something new. CRTPlayer
+started as a "wouldn't it be cool if" idea and turned into a real deep
+dive into shell scripting, filter chains, and reverse-engineering
+hardware I don't have full documentation for. I build and share mods
+like this because I like making things other people can enjoy, not
+because I expect anything back — but I'm currently between jobs, so if
+you got some use or nostalgia out of this project, any support genuinely
+helps and is deeply appreciated.
+
+If you'd like to support the project, you can buy me a coffee here:
+[buymeacoffee.com/Jack\_Appleseed](https://buymeacoffee.com/Jack_Appleseed)
+
